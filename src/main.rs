@@ -1,13 +1,19 @@
 use std::mem;
-use winapi::um::winuser::{EnumWindows, GetWindowRect, GetWindowTextW, IsWindowVisible};
-use winapi::shared::windef::HWND;
 use std::os::windows::ffi::OsStringExt;
+use winapi::shared::windef::HWND;
+use winapi::um::winuser::{EnumWindows, GetWindowRect, GetWindowTextW, IsWindowVisible};
 fn main() {
     unsafe {
-        EnumWindows(Some(enum_windows_callback), 0);
+        let mut x = String::from("[");
+        //定义一个字符串x
+        EnumWindows(Some(enum_windows_callback), &mut x as *mut _ as isize);
+        //传递x的指针作为参数
+        x.pop();
+        x.pop();
+        println!("{}]", x); //打印x
     }
 }
-unsafe extern "system" fn enum_windows_callback(hwnd: HWND, _l_param: isize) -> i32 {
+unsafe extern "system" fn enum_windows_callback(hwnd: HWND, l_param: isize) -> i32 {
     if IsWindowVisible(hwnd) == 0 {
         return 1;
     }
@@ -16,10 +22,24 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, _l_param: isize) -> 
     let mut buffer: [u16; 512] = [0; 512];
     GetWindowTextW(hwnd, buffer.as_mut_ptr(), 512);
     let title = String::from_utf16_lossy(&buffer);
-    println!("Window title: {}", title);
-    println!("Window position: ({}, {})", rect.left, rect.top);
-    println!("Window size: {} x {}", rect.right - rect.left, rect.bottom - rect.top);
-    println!("");
+
+    //将打印的文字拼接到x上
+    let x = &mut *(l_param as *mut String);
+    *x += "{\n\"title\": \"";
+    *x += &title;
+    *x += "\",\n";
+
+    *x += "\"x\": ";
+    *x += &rect.left.to_string();
+    *x += ",\n\"y\": ";
+    *x += &rect.top.to_string();
+    *x += ",\n";
+
+    *x += "\"width\": ";
+    *x += &(rect.right - rect.left).to_string();
+    *x += ",\n\"height\": ";
+    *x += &(rect.bottom - rect.top).to_string();
+    *x += "\n},\n";
+
     1
 }
-
