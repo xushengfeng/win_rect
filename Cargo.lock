@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "rust"
+name = "win_rect"
 version = "0.1.0"
 dependencies = [
  "winapi",
